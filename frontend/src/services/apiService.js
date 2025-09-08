@@ -1,331 +1,417 @@
-import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-
-// Create axios instance with default configuration
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000,
-});
-
-// Request interceptor for authentication
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
 
 export const apiService = {
-  // Authentication
+
   async login(credentials) {
-    const response = await api.post('/auth/login', credentials);
-    if (response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-    }
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          user: { id: 1, name: 'Admin User', email: 'admin@company.com' },
+          token: 'mock-jwt-token'
+        });
+      }, 500);
+    });
   },
 
   async logout() {
-    localStorage.removeItem('authToken');
-    return api.post('/auth/logout');
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ success: true });
+      }, 200);
+    });
   },
 
-  // Overview/Dashboard Data
+  // Dashboard Data (Mock)
   async getOverviewData() {
-    const response = await api.get('/dashboard/overview');
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(getMockOverviewData());
+      }, 300);
+    });
   },
 
   async getKPIs(timeRange = '30d') {
-    const response = await api.get(`/dashboard/kpis?timeRange=${timeRange}`);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          totalRevenue: { value: 847000, change: 28.5 },
+          activeUsers: { value: 124000, change: 12.3 },
+          averageCTR: { value: 3.8, change: 35.2 },
+          impressions: { value: 2400000, change: 18.7 }
+        });
+      }, 200);
+    });
   },
 
   async getRevenueData(timeRange = '6m') {
-    const response = await api.get(`/dashboard/revenue?timeRange=${timeRange}`);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { name: 'Jan', revenue: 4000, ctr: 2.4, rpu: 12.5 },
+          { name: 'Feb', revenue: 3000, ctr: 2.1, rpu: 11.8 },
+          { name: 'Mar', revenue: 5000, ctr: 2.8, rpu: 15.2 },
+          { name: 'Apr', revenue: 4500, ctr: 3.1, rpu: 16.8 },
+          { name: 'May', revenue: 6000, ctr: 3.5, rpu: 18.9 },
+          { name: 'Jun', revenue: 7200, ctr: 3.8, rpu: 21.3 }
+        ]);
+      }, 200);
+    });
   },
 
   async getAudienceSegmentation() {
-    const response = await api.get('/dashboard/audience-segmentation');
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { name: 'Tech Enthusiasts', value: 35, color: '#3b82f6' },
+          { name: 'Fashion Lovers', value: 25, color: '#10b981' },
+          { name: 'Sports Fans', value: 20, color: '#f59e0b' },
+          { name: 'Gamers', value: 12, color: '#ef4444' },
+          { name: 'Others', value: 8, color: '#8b5cf6' }
+        ]);
+      }, 200);
+    });
   },
 
-  // Campaign Management
+  // Campaign Management (Mock)
   async getCampaignsData() {
-    const response = await api.get('/campaigns');
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          activeCampaigns: [
+            {
+              id: 1,
+              name: 'Summer Tech Sale',
+              status: 'active',
+              budget: 50000,
+              spent: 32000,
+              impressions: 890000,
+              clicks: 24500,
+              conversions: 1250,
+              ctr: 2.75,
+              conversionRate: 5.1,
+              startDate: '2024-06-01',
+              endDate: '2024-08-31'
+            },
+            {
+              id: 2,
+              name: 'Back to School Campaign',
+              status: 'paused',
+              budget: 30000,
+              spent: 18500,
+              impressions: 520000,
+              clicks: 15600,
+              conversions: 780,
+              ctr: 3.0,
+              conversionRate: 5.0,
+              startDate: '2024-08-01',
+              endDate: '2024-09-15'
+            }
+          ]
+        });
+      }, 300);
+    });
   },
 
   async getCampaign(id) {
-    const response = await api.get(`/campaigns/${id}`);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          id,
+          name: `Campaign ${id}`,
+          status: 'active',
+          budget: 50000,
+          spent: 32000,
+          impressions: 890000,
+          clicks: 24500,
+          conversions: 1250
+        });
+      }, 200);
+    });
   },
 
   async createCampaign(campaignData) {
-    const response = await api.post('/campaigns', campaignData);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          id: Date.now(),
+          ...campaignData,
+          status: 'active',
+          impressions: 0,
+          clicks: 0,
+          conversions: 0,
+          ctr: 0,
+          conversionRate: 0
+        });
+      }, 500);
+    });
   },
 
   async updateCampaign(id, updateData) {
-    const response = await api.put(`/campaigns/${id}`, updateData);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ id, ...updateData });
+      }, 300);
+    });
   },
 
   async deleteCampaign(id) {
-    const response = await api.delete(`/campaigns/${id}`);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ success: true });
+      }, 200);
+    });
   },
 
-  async pauseCampaign(id) {
-    const response = await api.post(`/campaigns/${id}/pause`);
-    return response.data;
-  },
-
-  async resumeCampaign(id) {
-    const response = await api.post(`/campaigns/${id}/resume`);
-    return response.data;
-  },
-
-  async getCampaignMetrics(id, timeRange = '7d') {
-    const response = await api.get(`/campaigns/${id}/metrics?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  // A/B Testing
+  // A/B Testing (Mock)
   async getABTests() {
-    const response = await api.get('/ab-tests');
-    return response.data;
-  },
-
-  async getABTest(id) {
-    const response = await api.get(`/ab-tests/${id}`);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          {
+            id: 'A001',
+            name: 'Collaborative Filtering vs Manual Targeting',
+            status: 'running',
+            confidence: 95,
+            winner: 'ML Model',
+            startDate: '2024-06-15',
+            variants: [
+              { name: 'Control (Manual)', traffic: 50, conversions: 245, conversionRate: 4.9 },
+              { name: 'ML Model', traffic: 50, conversions: 312, conversionRate: 6.24 }
+            ]
+          },
+          {
+            id: 'A002',
+            name: 'Dynamic vs Static Pricing',
+            status: 'completed',
+            confidence: 98,
+            winner: 'Dynamic Pricing',
+            startDate: '2024-05-01',
+            endDate: '2024-05-31',
+            variants: [
+              { name: 'Static Pricing', traffic: 50, conversions: 890, conversionRate: 4.45 },
+              { name: 'Dynamic Pricing', traffic: 50, conversions: 1124, conversionRate: 5.62 }
+            ]
+          }
+        ]);
+      }, 300);
+    });
   },
 
   async createABTest(testData) {
-    const response = await api.post('/ab-tests', testData);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          id: `A${String(Date.now()).slice(-3)}`,
+          ...testData,
+          status: 'draft',
+          confidence: 0,
+          variants: []
+        });
+      }, 400);
+    });
   },
 
-  async updateABTest(id, updateData) {
-    const response = await api.put(`/ab-tests/${id}`, updateData);
-    return response.data;
-  },
-
-  async startABTest(id) {
-    const response = await api.post(`/ab-tests/${id}/start`);
-    return response.data;
-  },
-
-  async stopABTest(id) {
-    const response = await api.post(`/ab-tests/${id}/stop`);
-    return response.data;
-  },
-
-  async getABTestResults(id) {
-    const response = await api.get(`/ab-tests/${id}/results`);
-    return response.data;
-  },
-
-  // ML Models
+  // ML Models (Mock)
   async getModelsData() {
-    const response = await api.get('/models');
-    return response.data;
-  },
-
-  async getModelStatus(modelName) {
-    const response = await api.get(`/models/${modelName}/status`);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          collaborativeFiltering: {
+            status: 'active',
+            accuracy: 94.2,
+            lastTrained: '2024-06-10T14:30:00Z',
+            features: 128,
+            trainingTime: '2.3 hours'
+          },
+          ctrPrediction: {
+            status: 'active',
+            auc: 0.87,
+            lastTrained: '2024-06-12T09:15:00Z',
+            features: 256,
+            trainingTime: '4.1 hours'
+          },
+          revenueOptimization: {
+            status: 'training',
+            progress: 78,
+            estimatedCompletion: '2024-06-15T16:00:00Z',
+            features: 512,
+            estimatedTime: '6.2 hours'
+          }
+        });
+      }, 250);
+    });
   },
 
   async trainModel(modelName, parameters = {}) {
-    const response = await api.post(`/models/${modelName}/train`, parameters);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          message: `Training started for ${modelName}`,
+          estimatedTime: '4.5 hours'
+        });
+      }, 300);
+    });
   },
 
-  async deployModel(modelName, version) {
-    const response = await api.post(`/models/${modelName}/deploy`, { version });
-    return response.data;
-  },
-
-  async getModelMetrics(modelName, timeRange = '7d') {
-    const response = await api.get(`/models/${modelName}/metrics?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  async getModelPredictions(modelName, inputData) {
-    const response = await api.post(`/models/${modelName}/predict`, inputData);
-    return response.data;
-  },
-
-  // Analytics
-  async getAnalyticsData(timeRange = '30d', metrics = []) {
-    const params = new URLSearchParams();
-    params.append('timeRange', timeRange);
-    metrics.forEach(metric => params.append('metrics', metric));
-    
-    const response = await api.get(`/analytics?${params.toString()}`);
-    return response.data;
-  },
-
-  async getPerformanceMetrics(timeRange = '30d') {
-    const response = await api.get(`/analytics/performance?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  async getUserBehaviorAnalytics(timeRange = '30d') {
-    const response = await api.get(`/analytics/user-behavior?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  async getRevenueAnalytics(timeRange = '30d') {
-    const response = await api.get(`/analytics/revenue?timeRange=${timeRange}`);
-    return response.data;
-  },
-
-  // Real-time data streaming
-  async getRealtimeMetrics() {
-    const response = await api.get('/realtime/metrics');
-    return response.data;
-  },
-
-  async getRealtimeEvents(limit = 100) {
-    const response = await api.get(`/realtime/events?limit=${limit}`);
-    return response.data;
-  },
-
-  // Settings & Configuration
+  // Settings (Mock)
   async getSettings() {
-    const response = await api.get('/settings');
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          realTimeData: true,
+          notifications: true,
+          autoOptimization: false,
+          theme: 'light',
+          refreshInterval: 30
+        });
+      }, 200);
+    });
   },
 
   async updateSettings(settings) {
-    const response = await api.put('/settings', settings);
-    return response.data;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ success: true, settings });
+      }, 300);
+    });
   },
 
-  async getFeatureFlags() {
-    const response = await api.get('/settings/feature-flags');
-    return response.data;
-  },
-
-  async updateFeatureFlag(flagName, enabled) {
-    const response = await api.put(`/settings/feature-flags/${flagName}`, { enabled });
-    return response.data;
-  },
-
-  // User Management
-  async getUsers() {
-    const response = await api.get('/users');
-    return response.data;
-  },
-
-  async getUser(id) {
-    const response = await api.get(`/users/${id}`);
-    return response.data;
-  },
-
-  async updateUser(id, userData) {
-    const response = await api.put(`/users/${id}`, userData);
-    return response.data;
-  },
-
-  // System Health & Monitoring
+  // System Health (Mock)
   async getSystemHealth() {
-    const response = await api.get('/system/health');
-    return response.data;
-  },
-
-  async getSystemMetrics() {
-    const response = await api.get('/system/metrics');
-    return response.data;
-  },
-
-  async getLogs(level = 'info', limit = 100) {
-    const response = await api.get(`/system/logs?level=${level}&limit=${limit}`);
-    return response.data;
-  },
-
-  // Data Export
-  async exportData(type, timeRange, format = 'csv') {
-    const response = await api.get(`/export/${type}?timeRange=${timeRange}&format=${format}`, {
-      responseType: 'blob'
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          status: 'healthy',
+          services: {
+            database: 'healthy',
+            redis: 'healthy',
+            kafka: 'healthy',
+            mlPipeline: 'healthy'
+          },
+          uptime: '99.8%',
+          lastUpdate: new Date().toISOString()
+        });
+      }, 200);
     });
-    return response.data;
-  },
-
-  async exportCampaignData(campaignId, format = 'csv') {
-    const response = await api.get(`/export/campaigns/${campaignId}?format=${format}`, {
-      responseType: 'blob'
-    });
-    return response.data;
-  },
-
-  // Notifications
-  async getNotifications() {
-    const response = await api.get('/notifications');
-    return response.data;
-  },
-
-  async markNotificationRead(id) {
-    const response = await api.put(`/notifications/${id}/read`);
-    return response.data;
-  },
-
-  async getAlerts() {
-    const response = await api.get('/alerts');
-    return response.data;
-  },
-
-  async createAlert(alertData) {
-    const response = await api.post('/alerts', alertData);
-    return response.data;
   },
 
   // Utility functions
   formatError(error) {
-    if (error.response?.data?.message) {
-      return error.response.data.message;
-    }
-    if (error.message) {
-      return error.message;
-    }
-    return 'An unexpected error occurred';
+    return error.message || 'An unexpected error occurred';
   },
 
   isNetworkError(error) {
-    return !error.response && error.request;
+    return false; // No network errors in mock mode
   },
 
   isServerError(error) {
-    return error.response?.status >= 500;
+    return false; // No server errors in mock mode
   },
 
   isClientError(error) {
-    return error.response?.status >= 400 && error.response?.status < 500;
+    return false; // No client errors in mock mode
   }
 };
+
+// Mock data generator functions
+const getMockOverviewData = () => ({
+  kpis: {
+    totalRevenue: { value: 847000 + Math.floor(Math.random() * 50000), change: 28.5 + (Math.random() * 5) },
+    activeUsers: { value: 124000 + Math.floor(Math.random() * 10000), change: 12.3 + (Math.random() * 3) },
+    averageCTR: { value: +(3.8 + Math.random()).toFixed(1), change: 35.2 + (Math.random() * 5) },
+    impressions: { value: 2400000 + Math.floor(Math.random() * 200000), change: 18.7 + (Math.random() * 4) }
+  },
+  revenueData: [
+    { name: 'Jan', revenue: 4000 + Math.floor(Math.random() * 1000), ctr: +(2.4 + Math.random() * 0.5).toFixed(1), rpu: +(12.5 + Math.random() * 2).toFixed(1) },
+    { name: 'Feb', revenue: 3000 + Math.floor(Math.random() * 1000), ctr: +(2.1 + Math.random() * 0.5).toFixed(1), rpu: +(11.8 + Math.random() * 2).toFixed(1) },
+    { name: 'Mar', revenue: 5000 + Math.floor(Math.random() * 1000), ctr: +(2.8 + Math.random() * 0.5).toFixed(1), rpu: +(15.2 + Math.random() * 2).toFixed(1) },
+    { name: 'Apr', revenue: 4500 + Math.floor(Math.random() * 1000), ctr: +(3.1 + Math.random() * 0.5).toFixed(1), rpu: +(16.8 + Math.random() * 2).toFixed(1) },
+    { name: 'May', revenue: 6000 + Math.floor(Math.random() * 1000), ctr: +(3.5 + Math.random() * 0.5).toFixed(1), rpu: +(18.9 + Math.random() * 2).toFixed(1) },
+    { name: 'Jun', revenue: 7200 + Math.floor(Math.random() * 1000), ctr: +(3.8 + Math.random() * 0.5).toFixed(1), rpu: +(21.3 + Math.random() * 2).toFixed(1) }
+  ],
+  audienceData: [
+    { name: 'Tech Enthusiasts', value: 35 + Math.floor(Math.random() * 6) - 3, color: '#3b82f6' },
+    { name: 'Fashion Lovers', value: 25 + Math.floor(Math.random() * 6) - 3, color: '#10b981' },
+    { name: 'Sports Fans', value: 20 + Math.floor(Math.random() * 6) - 3, color: '#f59e0b' },
+    { name: 'Gamers', value: 12 + Math.floor(Math.random() * 4) - 2, color: '#ef4444' },
+    { name: 'Others', value: 8 + Math.floor(Math.random() * 4) - 2, color: '#8b5cf6' }
+  ],
+  performanceData: [
+    { metric: 'CTR Improvement', value: `+${(35 + Math.random() * 10).toFixed(0)}%`, trend: 'up' },
+    { metric: 'Revenue per User', value: `+${(28 + Math.random() * 8).toFixed(0)}%`, trend: 'up' },
+    { metric: 'Conversion Rate', value: `+${(42 + Math.random() * 10).toFixed(0)}%`, trend: 'up' },
+    { metric: 'Cost per Acquisition', value: `-${(18 + Math.random() * 6).toFixed(0)}%`, trend: 'down' }
+  ]
+});
+
+// Generate random campaign data
+const generateRandomCampaign = () => {
+  const names = [
+    'Summer Tech Sale', 'Back to School Campaign', 'Holiday Shopping', 'Spring Fashion',
+    'Black Friday Deals', 'Cyber Monday', 'New Year Promotions', 'Valentine\'s Day',
+    'Mother\'s Day Special', 'Father\'s Day Sale', 'Gaming Hardware Push', 'Fitness Goals'
+  ];
+  
+  const statuses = ['active', 'paused', 'completed'];
+  const budget = Math.floor(Math.random() * 80000) + 20000;
+  const spent = Math.floor(budget * (0.3 + Math.random() * 0.6));
+  
+  return {
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    name: names[Math.floor(Math.random() * names.length)],
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    budget,
+    spent,
+    impressions: Math.floor(Math.random() * 1000000) + 100000,
+    clicks: Math.floor(Math.random() * 50000) + 5000,
+    conversions: Math.floor(Math.random() * 2000) + 200,
+    ctr: +(Math.random() * 5 + 1).toFixed(2),
+    conversionRate: +(Math.random() * 8 + 2).toFixed(1),
+    startDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  };
+};
+
+// Generate random A/B test data
+const generateRandomABTest = () => {
+  const testNames = [
+    'Collaborative Filtering vs Manual Targeting',
+    'Dynamic vs Static Pricing',
+    'Personalized vs Generic Ads',
+    'Video vs Image Creatives',
+    'Mobile vs Desktop Optimization',
+    'Morning vs Evening Timing',
+    'Lookalike vs Interest Targeting',
+    'Single vs Multi-Product Ads'
+  ];
+  
+  const statuses = ['running', 'completed', 'paused', 'draft'];
+  
+  return {
+    id: `A${String(Date.now()).slice(-3)}`,
+    name: testNames[Math.floor(Math.random() * testNames.length)],
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    confidence: Math.floor(Math.random() * 30) + 70,
+    winner: Math.random() > 0.5 ? 'Variant A' : 'Variant B',
+    startDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+    variants: [
+      { 
+        name: 'Control', 
+        traffic: 50, 
+        conversions: Math.floor(Math.random() * 800) + 200, 
+        conversionRate: +(Math.random() * 6 + 3).toFixed(2) 
+      },
+      { 
+        name: 'Variant', 
+        traffic: 50, 
+        conversions: Math.floor(Math.random() * 1000) + 250, 
+        conversionRate: +(Math.random() * 8 + 4).toFixed(2) 
+      }
+    ]
+  };
+};
+
+// Console log to indicate mock mode
+console.log('🔧 API Service running in MOCK MODE - No backend required!');
+console.log('📊 Generating random data for demonstration...');
