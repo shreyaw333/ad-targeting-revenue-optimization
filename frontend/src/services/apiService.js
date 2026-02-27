@@ -1,316 +1,118 @@
+import axios from 'axios';
 
+// Backend URL - uses environment variable or defaults to localhost
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
+// Request interceptor for auth tokens
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const apiService = {
-
-  async login(credentials) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          user: { id: 1, name: 'Admin User', email: 'admin@company.com' },
-          token: 'mock-jwt-token'
-        });
-      }, 500);
-    });
-  },
-
-  async logout() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 200);
-    });
-  },
-
-  // Dashboard Data (Mock)
+  // Get dashboard overview data
   async getOverviewData() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(getMockOverviewData());
-      }, 300);
-    });
+    try {
+      console.log('Attempting to fetch overview data from backend...');
+      const response = await api.get('/dashboard/overview');
+      console.log('Successfully fetched overview data from backend');
+      return response.data;
+    } catch (error) {
+      console.log('Backend not available, using mock data for overview');
+      console.error('Error:', error.message);
+      return getMockOverviewData();
+    }
   },
 
-  async getKPIs(timeRange = '30d') {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          totalRevenue: { value: 847000, change: 28.5 },
-          activeUsers: { value: 124000, change: 12.3 },
-          averageCTR: { value: 3.8, change: 35.2 },
-          impressions: { value: 2400000, change: 18.7 }
-        });
-      }, 200);
-    });
-  },
-
-  async getRevenueData(timeRange = '6m') {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          { name: 'Jan', revenue: 4000, ctr: 2.4, rpu: 12.5 },
-          { name: 'Feb', revenue: 3000, ctr: 2.1, rpu: 11.8 },
-          { name: 'Mar', revenue: 5000, ctr: 2.8, rpu: 15.2 },
-          { name: 'Apr', revenue: 4500, ctr: 3.1, rpu: 16.8 },
-          { name: 'May', revenue: 6000, ctr: 3.5, rpu: 18.9 },
-          { name: 'Jun', revenue: 7200, ctr: 3.8, rpu: 21.3 }
-        ]);
-      }, 200);
-    });
-  },
-
-  async getAudienceSegmentation() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          { name: 'Tech Enthusiasts', value: 35, color: '#3b82f6' },
-          { name: 'Fashion Lovers', value: 25, color: '#10b981' },
-          { name: 'Sports Fans', value: 20, color: '#f59e0b' },
-          { name: 'Gamers', value: 12, color: '#ef4444' },
-          { name: 'Others', value: 8, color: '#8b5cf6' }
-        ]);
-      }, 200);
-    });
-  },
-
-  // Campaign Management (Mock)
+  // Get campaigns data
   async getCampaignsData() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          activeCampaigns: [
-            {
-              id: 1,
-              name: 'Summer Tech Sale',
-              status: 'active',
-              budget: 50000,
-              spent: 32000,
-              impressions: 890000,
-              clicks: 24500,
-              conversions: 1250,
-              ctr: 2.75,
-              conversionRate: 5.1,
-              startDate: '2024-06-01',
-              endDate: '2024-08-31'
-            },
-            {
-              id: 2,
-              name: 'Back to School Campaign',
-              status: 'paused',
-              budget: 30000,
-              spent: 18500,
-              impressions: 520000,
-              clicks: 15600,
-              conversions: 780,
-              ctr: 3.0,
-              conversionRate: 5.0,
-              startDate: '2024-08-01',
-              endDate: '2024-09-15'
-            }
-          ]
-        });
-      }, 300);
-    });
+    try {
+      console.log('Attempting to fetch campaigns from backend...');
+      const response = await api.get('/campaigns');
+      console.log('Successfully fetched campaigns from backend');
+      return { activeCampaigns: response.data };
+    } catch (error) {
+      console.log('Backend not available, using mock data for campaigns');
+      console.error('Error:', error.message);
+      return getMockCampaignsData();
+    }
   },
 
-  async getCampaign(id) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          id,
-          name: `Campaign ${id}`,
-          status: 'active',
-          budget: 50000,
-          spent: 32000,
-          impressions: 890000,
-          clicks: 24500,
-          conversions: 1250
-        });
-      }, 200);
-    });
-  },
-
-  async createCampaign(campaignData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          id: Date.now(),
-          ...campaignData,
-          status: 'active',
-          impressions: 0,
-          clicks: 0,
-          conversions: 0,
-          ctr: 0,
-          conversionRate: 0
-        });
-      }, 500);
-    });
-  },
-
-  async updateCampaign(id, updateData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ id, ...updateData });
-      }, 300);
-    });
-  },
-
-  async deleteCampaign(id) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 200);
-    });
-  },
-
-  // A/B Testing (Mock)
+  // Get A/B tests data
   async getABTests() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: 'A001',
-            name: 'Collaborative Filtering vs Manual Targeting',
-            status: 'running',
-            confidence: 95,
-            winner: 'ML Model',
-            startDate: '2024-06-15',
-            variants: [
-              { name: 'Control (Manual)', traffic: 50, conversions: 245, conversionRate: 4.9 },
-              { name: 'ML Model', traffic: 50, conversions: 312, conversionRate: 6.24 }
-            ]
-          },
-          {
-            id: 'A002',
-            name: 'Dynamic vs Static Pricing',
-            status: 'completed',
-            confidence: 98,
-            winner: 'Dynamic Pricing',
-            startDate: '2024-05-01',
-            endDate: '2024-05-31',
-            variants: [
-              { name: 'Static Pricing', traffic: 50, conversions: 890, conversionRate: 4.45 },
-              { name: 'Dynamic Pricing', traffic: 50, conversions: 1124, conversionRate: 5.62 }
-            ]
-          }
-        ]);
-      }, 300);
-    });
+    try {
+      console.log('Attempting to fetch A/B tests from backend...');
+      const response = await api.get('/ab-tests');
+      console.log('Successfully fetched A/B tests from backend');
+      return response.data;
+    } catch (error) {
+      console.log('Backend not available, using mock data for A/B tests');
+      console.error('Error:', error.message);
+      return getMockABTestsData();
+    }
   },
 
-  async createABTest(testData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          id: `A${String(Date.now()).slice(-3)}`,
-          ...testData,
-          status: 'draft',
-          confidence: 0,
-          variants: []
-        });
-      }, 400);
-    });
-  },
-
-  // ML Models (Mock)
+  // Get ML models data
   async getModelsData() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          collaborativeFiltering: {
-            status: 'active',
-            accuracy: 94.2,
-            lastTrained: '2024-06-10T14:30:00Z',
-            features: 128,
-            trainingTime: '2.3 hours'
-          },
-          ctrPrediction: {
-            status: 'active',
-            auc: 0.87,
-            lastTrained: '2024-06-12T09:15:00Z',
-            features: 256,
-            trainingTime: '4.1 hours'
-          },
-          revenueOptimization: {
-            status: 'training',
-            progress: 78,
-            estimatedCompletion: '2024-06-15T16:00:00Z',
-            features: 512,
-            estimatedTime: '6.2 hours'
-          }
-        });
-      }, 250);
-    });
+    try {
+      console.log('Attempting to fetch models data from backend...');
+      const response = await api.get('/models');
+      console.log('Successfully fetched models data from backend');
+      return response.data;
+    } catch (error) {
+      console.log('Backend not available, using mock data for models');
+      console.error('Error:', error.message);
+      return getMockModelsData();
+    }
   },
 
-  async trainModel(modelName, parameters = {}) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          message: `Training started for ${modelName}`,
-          estimatedTime: '4.5 hours'
-        });
-      }, 300);
-    });
+  // Get user recommendations (collaborative filtering)
+  async getUserRecommendations(userId) {
+    try {
+      const response = await api.get(`/recommendations/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      return { recommendations: [], error: error.message };
+    }
   },
 
-  // Settings (Mock)
-  async getSettings() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          realTimeData: true,
-          notifications: true,
-          autoOptimization: false,
-          theme: 'light',
-          refreshInterval: 30
-        });
-      }, 200);
-    });
-  },
-
-  async updateSettings(settings) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, settings });
-      }, 300);
-    });
-  },
-
-  // System Health (Mock)
-  async getSystemHealth() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          status: 'healthy',
-          services: {
-            database: 'healthy',
-            redis: 'healthy',
-            kafka: 'healthy',
-            mlPipeline: 'healthy'
-          },
-          uptime: '99.8%',
-          lastUpdate: new Date().toISOString()
-        });
-      }, 200);
-    });
-  },
-
-  // Utility functions
-  formatError(error) {
-    return error.message || 'An unexpected error occurred';
-  },
-
-  isNetworkError(error) {
-    return false; // No network errors in mock mode
-  },
-
-  isServerError(error) {
-    return false; // No server errors in mock mode
-  },
-
-  isClientError(error) {
-    return false; // No client errors in mock mode
+  // Predict CTR for an ad
+  async predictCTR(adData) {
+    try {
+      const response = await api.post('/predict/ctr', adData);
+      return response.data;
+    } catch (error) {
+      console.error('Error predicting CTR:', error);
+      return { predicted_ctr: 0.03, error: error.message };
+    }
   }
 };
 
@@ -343,6 +145,45 @@ const getMockOverviewData = () => ({
     { metric: 'Conversion Rate', value: `+${(42 + Math.random() * 10).toFixed(0)}%`, trend: 'up' },
     { metric: 'Cost per Acquisition', value: `-${(18 + Math.random() * 6).toFixed(0)}%`, trend: 'down' }
   ]
+});
+
+const getMockCampaignsData = () => ({
+  activeCampaigns: [
+    generateRandomCampaign(),
+    generateRandomCampaign(),
+    generateRandomCampaign(),
+    generateRandomCampaign(),
+    generateRandomCampaign()
+  ]
+});
+
+const getMockABTestsData = () => [
+  generateRandomABTest(),
+  generateRandomABTest(),
+  generateRandomABTest()
+];
+
+const getMockModelsData = () => ({
+  collaborativeFiltering: {
+    status: 'active',
+    accuracy: 94.2,
+    lastTrained: new Date().toISOString(),
+    features: 128,
+    trainingTime: '2.3 hours'
+  },
+  ctrPrediction: {
+    status: 'active',
+    auc: 0.87,
+    lastTrained: new Date().toISOString(),
+    features: 256,
+    trainingTime: '4.1 hours'
+  },
+  revenueOptimization: {
+    status: 'active',
+    progress: 100,
+    features: 512,
+    trainingTime: '6.2 hours'
+  }
 });
 
 // Generate random campaign data
@@ -412,6 +253,7 @@ const generateRandomABTest = () => {
   };
 };
 
-// Console log to indicate mock mode
-console.log('🔧 API Service running in MOCK MODE - No backend required!');
-console.log('📊 Generating random data for demonstration...');
+// Log initial status
+console.log('API Service initialized');
+console.log('Backend URL:', API_BASE_URL);
+console.log('Will fall back to mock data if backend is unavailable');
