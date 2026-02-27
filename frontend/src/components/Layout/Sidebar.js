@@ -7,7 +7,6 @@ import {
   FlaskConical,
   Brain,
   Settings,
-  Users,
   DollarSign,
   Activity
 } from 'lucide-react';
