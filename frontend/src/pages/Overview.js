@@ -10,9 +10,7 @@ import { DollarSign, Users, MousePointer, Eye, TrendingUp, AlertTriangle } from 
 const Overview = () => {
   const { overview, loadOverviewData, loading, error } = useData();
 
-  useEffect(() => {
-    loadOverviewData();
-  }, []);
+  useEffect(() => { loadOverviewData() }, [loadOverviewData]);
 
   if (loading) {
     return (
