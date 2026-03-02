@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
 
 const DataContext = createContext();
@@ -95,92 +95,78 @@ const dataReducer = (state, action) => {
 export const DataProvider = ({ children }) => {
   const [state, dispatch] = useReducer(dataReducer, initialState);
 
-  // Load data from API on component mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // Simulate real-time data updates
-  useEffect(() => {
-    let interval;
-    if (state.settings.realTimeData) {
-      interval = setInterval(() => {
-        loadOverviewData();
-      }, 30000); // Update every 30 seconds
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [state.settings.realTimeData]);
-
-  const loadData = async () => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    try {
-      // Load all data in parallel
-      const [overviewData, campaignsData, abTestsData, modelsData] = await Promise.all([
-        apiService.getOverviewData(),
-        apiService.getCampaignsData(),
-        apiService.getABTests(),
-        apiService.getModelsData()
-      ]);
-
-      dispatch({ type: 'SET_OVERVIEW_DATA', payload: overviewData });
-      dispatch({ type: 'SET_CAMPAIGNS_DATA', payload: campaignsData });
-      dispatch({ type: 'SET_AB_TESTS', payload: abTestsData });
-      dispatch({ type: 'SET_MODELS_DATA', payload: modelsData });
-    } catch (error) {
-      console.error('Error loading data:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to load data from backend' });
-    }
-  };
-
-  const loadOverviewData = async () => {
+  // FIX: wrap in useCallback so function reference is stable
+  const loadOverviewData = useCallback(async () => {
     try {
       const data = await apiService.getOverviewData();
       dispatch({ type: 'SET_OVERVIEW_DATA', payload: data });
     } catch (error) {
       console.error('Error loading overview data:', error);
     }
-  };
+  }, []);
 
-  const loadCampaignsData = async () => {
+  const loadCampaignsData = useCallback(async () => {
     try {
       const data = await apiService.getCampaignsData();
       dispatch({ type: 'SET_CAMPAIGNS_DATA', payload: data });
     } catch (error) {
       console.error('Error loading campaigns data:', error);
     }
-  };
+  }, []);
 
-  const loadABTestsData = async () => {
+  const loadABTestsData = useCallback(async () => {
     try {
       const data = await apiService.getABTests();
       dispatch({ type: 'SET_AB_TESTS', payload: data });
     } catch (error) {
       console.error('Error loading AB tests data:', error);
     }
-  };
+  }, []);
 
-  const loadModelsData = async () => {
+  const loadModelsData = useCallback(async () => {
     try {
       const data = await apiService.getModelsData();
       dispatch({ type: 'SET_MODELS_DATA', payload: data });
     } catch (error) {
       console.error('Error loading models data:', error);
     }
-  };
+  }, []);
+
+  // Load all data once on mount
+  useEffect(() => {
+    const loadData = async () => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const [overviewData, campaignsData, abTestsData, modelsData] = await Promise.all([
+          apiService.getOverviewData(),
+          apiService.getCampaignsData(),
+          apiService.getABTests(),
+          apiService.getModelsData()
+        ]);
+        dispatch({ type: 'SET_OVERVIEW_DATA', payload: overviewData });
+        dispatch({ type: 'SET_CAMPAIGNS_DATA', payload: campaignsData });
+        dispatch({ type: 'SET_AB_TESTS', payload: abTestsData });
+        dispatch({ type: 'SET_MODELS_DATA', payload: modelsData });
+      } catch (error) {
+        console.error('Error loading data:', error);
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to load data from backend' });
+      }
+    };
+    loadData();
+  }, []);
+
+  // FIX: removed the 30-second polling interval that caused constant re-renders
 
   const createCampaign = (campaignData) => {
     const newCampaign = {
       ...campaignData,
       id: Date.now(),
       status: 'active',
-      impressions: Math.floor(Math.random() * 100000),
-      clicks: Math.floor(Math.random() * 5000),
-      conversions: Math.floor(Math.random() * 500),
-      ctr: (Math.random() * 5).toFixed(2),
-      conversionRate: (Math.random() * 10).toFixed(1),
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      ctr: 0,
+      conversionRate: 0,
       startDate: new Date().toISOString().split('T')[0]
     };
     dispatch({ type: 'ADD_CAMPAIGN', payload: newCampaign });
@@ -199,11 +185,11 @@ export const DataProvider = ({ children }) => {
       ...testData,
       id: `A${String(Date.now()).slice(-3)}`,
       status: 'running',
-      confidence: Math.floor(Math.random() * 30) + 70,
+      confidence: 0,
       startDate: new Date().toISOString(),
       variants: [
-        { name: 'Control', traffic: 50, conversions: Math.floor(Math.random() * 500), conversionRate: (Math.random() * 8).toFixed(2) },
-        { name: 'Variant', traffic: 50, conversions: Math.floor(Math.random() * 600), conversionRate: (Math.random() * 10).toFixed(2) }
+        { name: 'Control', traffic: 50, conversions: 0, conversionRate: 0 },
+        { name: 'Variant', traffic: 50, conversions: 0, conversionRate: 0 }
       ]
     };
     dispatch({ type: 'ADD_AB_TEST', payload: newTest });
