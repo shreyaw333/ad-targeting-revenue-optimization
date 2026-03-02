@@ -1,15 +1,27 @@
+import boto3
+import io
+import os
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from pathlib import Path
 import pandas as pd
-import pickle
 
 from app.database import get_db
 from services.ml_service import ml_service
 
 router = APIRouter()
 
-DATA_PATH = Path(__file__).parent.parent.parent.parent / "data" / "processed"
+BUCKET = os.getenv('S3_BUCKET_NAME', 'ad-targeting-bucket-01')
+
+def read_csv_from_s3(key):
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+        region_name=os.getenv('AWS_REGION', 'us-east-1')
+    )
+    obj = s3.get_object(Bucket=BUCKET, Key=key)
+    return pd.read_csv(io.BytesIO(obj['Body'].read()))
+
 
 def get_real_model_data():
     result = {
@@ -34,40 +46,31 @@ def get_real_model_data():
         }
     }
 
-    # Load real CTR metrics if available
-    ctr_metrics_path = DATA_PATH / "ctr_model_metrics.csv"
-    if ctr_metrics_path.exists():
-        try:
-            df = pd.read_csv(ctr_metrics_path)
-            row = df.iloc[0]
-            result["ctrPrediction"]["auc"] = round(float(row.get("auc", 0)), 3)
-            result["ctrPrediction"]["precision"] = round(float(row.get("precision", 0)), 3)
-            result["ctrPrediction"]["recall"] = round(float(row.get("recall", 0)), 3)
-            result["ctrPrediction"]["f1"] = round(float(row.get("f1_score", 0)), 3)
-        except Exception as e:
-            print(f"Could not load CTR metrics: {e}")
+    try:
+        df = read_csv_from_s3('processed/ctr_model_metrics.csv')
+        row = df.iloc[0]
+        result["ctrPrediction"]["auc"] = round(float(row.get("auc", 0)), 3)
+        result["ctrPrediction"]["precision"] = round(float(row.get("precision", 0)), 3)
+        result["ctrPrediction"]["recall"] = round(float(row.get("recall", 0)), 3)
+        result["ctrPrediction"]["f1"] = round(float(row.get("f1_score", 0)), 3)
+    except Exception as e:
+        print(f"Could not load CTR metrics: {e}")
 
-    # Load real CF metrics if available
-    cf_metrics_path = DATA_PATH / "cf_model_metrics.csv"
-    if cf_metrics_path.exists():
-        try:
-            df = pd.read_csv(cf_metrics_path)
-            row = df.iloc[0]
-            result["collaborativeFiltering"]["reconstruction_error"] = round(float(row.get("reconstruction_error", 0)), 4)
-        except Exception as e:
-            print(f"Could not load CF metrics: {e}")
+    try:
+        df = read_csv_from_s3('processed/cf_model_metrics.csv')
+        row = df.iloc[0]
+        result["collaborativeFiltering"]["reconstruction_error"] = round(float(row.get("reconstruction_error", 0)), 4)
+    except Exception as e:
+        print(f"Could not load CF metrics: {e}")
 
-    # Load revenue optimizer metrics
-    rev_metrics_path = DATA_PATH / "revenue_model_metrics.csv"
-    if rev_metrics_path.exists():
-        try:
-            df = pd.read_csv(rev_metrics_path)
-            row = df.iloc[0]
-            result["revenueOptimization"]["total_revenue"] = round(float(row.get("total_revenue", 0)), 2)
-            result["revenueOptimization"]["roi"] = round(float(row.get("roi", 0)), 3)
-            result["revenueOptimization"]["profit"] = round(float(row.get("profit", 0)), 2)
-        except Exception as e:
-            print(f"Could not load revenue metrics: {e}")
+    try:
+        df = read_csv_from_s3('processed/revenue_model_metrics.csv')
+        row = df.iloc[0]
+        result["revenueOptimization"]["total_revenue"] = round(float(row.get("total_revenue", 0)), 2)
+        result["revenueOptimization"]["roi"] = round(float(row.get("roi", 0)), 3)
+        result["revenueOptimization"]["profit"] = round(float(row.get("profit", 0)), 2)
+    except Exception as e:
+        print(f"Could not load revenue metrics: {e}")
 
     return result
 

@@ -112,7 +112,7 @@ const RevenueChart = ({ data = [] }) => {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => formatYAxisTick(value, null, 'percentage')}
+            tickFormatter={(value) => value > 100 ? `$${(value/1000).toFixed(0)}K` : `${value}%`}
           />
           
           <Tooltip content={<CustomTooltip />} />
